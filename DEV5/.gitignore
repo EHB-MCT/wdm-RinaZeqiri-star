@@ -3,6 +3,7 @@
 # ======================
 backend/node_modules/
 frontend/node_modules/
+admin-frontend/node_modules/
 node_modules/
 
 # ======================
@@ -14,7 +15,7 @@ backend/.env
 # build output
 # ======================
 frontend/dist/
-backend/dist/
+admin-frontend/dist/
 
 # ======================
 # system files
