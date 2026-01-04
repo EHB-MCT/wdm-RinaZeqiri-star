@@ -26,6 +26,8 @@ export async function saveDiaryEntry(data) {
 	});
 
 	if (!res.ok) {
+		const err = await res.text();
+		console.error("Save entry failed:", err);
 		throw new Error("Failed to save diary entry");
 	}
 
@@ -33,22 +35,29 @@ export async function saveDiaryEntry(data) {
 }
 
 export async function sendEvent({ userId, type, meta = {} }) {
-	const res = await fetch(`${API_URL}/events`, {
-		method: "POST",
-		headers: {
-			"Content-Type": "application/json",
-		},
-		body: JSON.stringify({
-			userId,
-			type,
-			meta,
-		}),
-	});
+	if (!userId || !type) return;
 
-	if (!res.ok) {
-		console.warn("Tracking event failed");
+	try {
+		const res = await fetch(`${API_URL}/events`, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify({
+				userId,
+				type,
+				meta,
+			}),
+		});
+
+		if (!res.ok) {
+			console.warn("Tracking event failed");
+			return null;
+		}
+
+		return res.json();
+	} catch (err) {
+		console.warn("Tracking event error:", err);
 		return null;
 	}
-
-	return res.json();
 }
