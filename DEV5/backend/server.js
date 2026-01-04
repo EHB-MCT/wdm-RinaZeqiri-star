@@ -1,9 +1,11 @@
+import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import authRoutes from "./src/routes/auth.js";
 import entriesRoutes from "./src/routes/entries.js";
+import eventsRoutes from "./src/routes/events.js";
+import adminRoutes from "./src/routes/admin.js";
 import mongoose from "mongoose";
-
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -22,6 +24,8 @@ app.get("/health", (req, res) => {
 
 app.use("/auth", authRoutes);
 app.use("/entries", entriesRoutes);
+app.use("/events", eventsRoutes);
+app.use("/admin", adminRoutes);
 
 app.get("/", (req, res) => {
 	res.json({ message: "Backend skeleton ready." });
