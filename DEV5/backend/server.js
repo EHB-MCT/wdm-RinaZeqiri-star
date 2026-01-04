@@ -21,7 +21,7 @@ app.get("/health", (req, res) => {
 });
 
 app.use("/auth", authRoutes);
-app.use("/api", entriesRoutes);
+app.use("/entries", entriesRoutes);
 
 app.get("/", (req, res) => {
 	res.json({ message: "Backend skeleton ready." });
