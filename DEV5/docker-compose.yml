@@ -19,6 +19,28 @@ services:
     ports:
       - "3000:3000"
 
+  frontend:
+    build: ./frontend
+    container_name: wdm-frontend
+    restart: unless-stopped
+    env_file:
+      - ./frontend/.env
+    depends_on:
+      - backend
+    ports:
+      - "5173:5173"
+
+  admin-frontend:
+    build: ./admin-frontend
+    container_name: wdm-admin-frontend
+    restart: always
+    env_file:
+      - ./admin-frontend/.env
+    depends_on:
+      - backend
+    ports:
+      - "5174:5174"
+
   mongo-express:
     image: mongo-express:latest
     container_name: wdm-mongo-express
