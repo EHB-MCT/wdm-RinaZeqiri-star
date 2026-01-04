@@ -100,37 +100,45 @@ function countMatches(text, words) {
 		return count + normalizedWords.filter((w) => w === word).length;
 	}, 0);
 }
-
 function extractPeople(textRaw) {
 	const people = [];
+	const text = (textRaw || "").trim();
+
 	const relationTypes = Object.keys(lexicons.relations);
 
-	relationTypes.forEach((relation) => {
+	for (const relation of relationTypes) {
 		const relationWords = lexicons.relations[relation];
 
-		relationWords.forEach((relWord) => {
-			const regex = new RegExp(`\\b${relWord}\\s+([A-Z][\\p{L}]+)\\b`, "gu");
-			const matches = [...textRaw.matchAll(regex)];
+		for (const relWord of relationWords) {
+			const regexName = new RegExp(`\\b(?:mijn\\s+)?${relWord}\\b(?:\\s*[,:(-]?\\s*(?:heet|is|=)?\\s*)?([A-Z][\\p{L}]{1,})\\b`, "gu");
 
-			matches.forEach((match) => {
-				const name = match[1];
-				if (!people.some((p) => p.type === relation && p.name === name)) {
+			const matches = [...text.matchAll(regexName)];
+
+			for (const m of matches) {
+				const name = m[1];
+				if (name && !people.some((p) => p.type === relation && p.name === name)) {
 					people.push({ type: relation, name });
 				}
-			});
-
-			if (matches.length === 0 && textRaw.toLowerCase().includes(relWord)) {
-				const hasRelationWithNames = people.some((p) => p.type === relation && p.name !== null);
-				const hasRelationWithoutName = people.some((p) => p.type === relation && p.name === null);
-
-				if (!hasRelationWithNames && !hasRelationWithoutName) {
-					people.push({ type: relation, name: null });
-				}
 			}
-		});
+
+			const relRegex = new RegExp(`\\b${relWord}\\b`, "iu");
+			const hasRelWord = relRegex.test(text);
+
+			const alreadyHasNull = people.some((p) => p.type === relation && p.name === null);
+			const alreadyHasName = people.some((p) => p.type === relation && p.name !== null);
+
+			if (hasRelWord && !alreadyHasName && !alreadyHasNull) {
+				people.push({ type: relation, name: null });
+			}
+		}
+	}
+
+	const cleaned = people.filter((p) => {
+		if (p.name !== null) return true;
+		return !people.some((x) => x.type === p.type && x.name !== null);
 	});
 
-	return people;
+	return cleaned;
 }
 
 export function analyzeEntry(answers) {

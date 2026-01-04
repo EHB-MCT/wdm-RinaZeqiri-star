@@ -1,85 +1,307 @@
 import { useState } from "react";
+import { getDiaryPrompt, saveDiaryEntry, sendEvent } from "./api.js";
 
 export default function App() {
-  const [step, setStep] = useState("login");
-  const [name, setName] = useState("");
-  const [birthday, setBirthday] = useState("");
-  const [prompt, setPrompt] = useState(null);
-  const [answers, setAnswers] = useState(["", "", ""]);
+	const [step, setStep] = useState("birthday");
+	const [birthday, setBirthday] = useState("");
+	const [prompt, setPrompt] = useState(null);
+	const [answers, setAnswers] = useState({});
+	const [loading, setLoading] = useState(false);
+	const [error, setError] = useState(null);
+	const [saved, setSaved] = useState(false);
 
-  async function start() {
-    const res = await fetch("http://localhost:5174/api/prompt", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, birthday }),
-    });
-    const data = await res.json();
-    setPrompt(data);
-    setStep("questions");
-  }
+	async function handleBirthdaySubmit(e) {
+		e.preventDefault();
+		if (!birthday) return;
 
-  async function save() {
-    await fetch("http://localhost:5174/api/save", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, birthday, answers }),
-    });
-    setStep("done");
-  }
+		setLoading(true);
+		setError(null);
 
-  if (step === "login")
-    return (
-      <div style={{ padding: 30, maxWidth: 400, margin: "auto" }}>
-        <h1>Astro Dagboek</h1>
-        <input
-          placeholder="Naam"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          style={{ display: "block", marginBottom: 10, width: "100%" }}
-        />
-        <input
-          type="date"
-          value={birthday}
-          onChange={(e) => setBirthday(e.target.value)}
-          style={{ display: "block", marginBottom: 10, width: "100%" }}
-        />
-        <button onClick={start}>Ga verder</button>
-      </div>
-    );
+		try {
+			await sendEvent({ type: "FORM_SUBMIT", meta: { form: "birthday" } });
 
-  if (step === "questions")
-    return (
-      <div style={{ padding: 30, maxWidth: 500, margin: "auto" }}>
-        <h2>{prompt.sign}</h2>
-        <p>{prompt.text}</p>
+			const promptData = await getDiaryPrompt(birthday);
+			setPrompt(promptData);
 
-        {prompt.questions.map((q, i) => (
-          <div key={i} style={{ marginTop: 15 }}>
-            <p>{q}</p>
-            <textarea
-              value={answers[i]}
-              onChange={(e) => {
-                const copy = [...answers];
-                copy[i] = e.target.value;
-                setAnswers(copy);
-              }}
-              style={{ width: "100%", height: 60 }}
-            />
-          </div>
-        ))}
+			const initialAnswers = {};
+			promptData.questions.forEach((_, index) => {
+				initialAnswers[index] = "";
+			});
+			setAnswers(initialAnswers);
 
-        <button onClick={save} style={{ marginTop: 20 }}>
-          Opslaan
-        </button>
-      </div>
-    );
+			setStep("questions");
+		} catch (err) {
+			setError("Failed to get diary prompt. Please try again.");
+		} finally {
+			setLoading(false);
+		}
+	}
 
-  if (step === "done")
-    return (
-      <div style={{ padding: 30, textAlign: "center" }}>
-        <h2>Bedankt!</h2>
-        <p>Je antwoorden zijn opgeslagen (in het geheugen van de server).</p>
-        <button onClick={() => setStep("login")}>Nieuwe dag</button>
-      </div>
-    );
+	function handleAnswerChange(index, value) {
+		setAnswers((prev) => ({
+			...prev,
+			[index]: value,
+		}));
+	}
+
+	async function handleSave(e) {
+		e.preventDefault();
+
+		if (!prompt) return;
+
+		setLoading(true);
+		setError(null);
+
+		try {
+			await sendEvent({ type: "FORM_SUBMIT", meta: { form: "save_entry" } });
+
+			await saveDiaryEntry({
+				userId: "65a1b2c3d4e5f67890123456",
+				date: new Date().toISOString().split("T")[0],
+				zodiacSign: prompt.sign,
+				promptText: prompt.text,
+				answers: answers,
+			});
+
+			setSaved(true);
+			setStep("saved");
+		} catch (err) {
+			setError("Failed to save entry. Please try again.");
+		} finally {
+			setLoading(false);
+		}
+	}
+
+	function handleReset() {
+		setStep("birthday");
+		setBirthday("");
+		setPrompt(null);
+		setAnswers({});
+		setError(null);
+		setSaved(false);
+	}
+
+	if (step === "birthday") {
+		return (
+			<div
+				style={{
+					padding: "2rem",
+					maxWidth: "400px",
+					margin: "0 auto",
+					fontFamily: "Arial, sans-serif",
+				}}
+			>
+				<h1
+					style={{
+						textAlign: "center",
+						marginBottom: "2rem",
+						color: "#333",
+					}}
+				>
+					Astro Diary
+				</h1>
+
+				<form onSubmit={handleBirthdaySubmit}>
+					<div style={{ marginBottom: "1rem" }}>
+						<label
+							htmlFor="birthday"
+							style={{
+								display: "block",
+								marginBottom: "0.5rem",
+								fontWeight: "bold",
+							}}
+						>
+							Your Birthday:
+						</label>
+						<input
+							id="birthday"
+							type="date"
+							value={birthday}
+							onChange={(e) => setBirthday(e.target.value)}
+							required
+							style={{
+								width: "100%",
+								padding: "0.5rem",
+								border: "1px solid #ddd",
+								borderRadius: "4px",
+								fontSize: "1rem",
+							}}
+						/>
+					</div>
+
+					{error && (
+						<div
+							style={{
+								color: "red",
+								marginBottom: "1rem",
+								padding: "0.5rem",
+								backgroundColor: "#ffebee",
+								border: "1px solid #f44336",
+								borderRadius: "4px",
+							}}
+						>
+							{error}
+						</div>
+					)}
+
+					<button
+						type="submit"
+						disabled={loading || !birthday}
+						style={{
+							width: "100%",
+							padding: "0.75rem",
+							backgroundColor: loading ? "#ccc" : "#007bff",
+							color: "white",
+							border: "none",
+							borderRadius: "4px",
+							fontSize: "1rem",
+							cursor: loading ? "not-allowed" : "pointer",
+						}}
+					>
+						{loading ? "Loading..." : "Get My Daily Prompt"}
+					</button>
+				</form>
+			</div>
+		);
+	}
+
+	if (step === "questions") {
+		return (
+			<div
+				style={{
+					padding: "2rem",
+					maxWidth: "600px",
+					margin: "0 auto",
+					fontFamily: "Arial, sans-serif",
+				}}
+			>
+				<div style={{ marginBottom: "2rem", textAlign: "center" }}>
+					<h2 style={{ color: "#333", marginBottom: "1rem" }}>
+						{prompt.sign} • {new Date().toLocaleDateString()}
+					</h2>
+					<p
+						style={{
+							fontSize: "1.1rem",
+							lineHeight: "1.5",
+							color: "#666",
+							fontStyle: "italic",
+						}}
+					>
+						{prompt.text}
+					</p>
+				</div>
+
+				<form onSubmit={handleSave}>
+					{prompt.questions.map((question, index) => (
+						<div key={index} style={{ marginBottom: "1.5rem" }}>
+							<label
+								style={{
+									display: "block",
+									marginBottom: "0.5rem",
+									fontWeight: "bold",
+									color: "#333",
+								}}
+							>
+								{question}
+							</label>
+							<textarea
+								value={answers[index] || ""}
+								onChange={(e) => handleAnswerChange(index, e.target.value)}
+								required
+								style={{
+									width: "100%",
+									minHeight: "100px",
+									padding: "0.5rem",
+									border: "1px solid #ddd",
+									borderRadius: "4px",
+									fontSize: "1rem",
+									resize: "vertical",
+									fontFamily: "inherit",
+								}}
+							/>
+						</div>
+					))}
+
+					{error && (
+						<div
+							style={{
+								color: "red",
+								marginBottom: "1rem",
+								padding: "0.5rem",
+								backgroundColor: "#ffebee",
+								border: "1px solid #f44336",
+								borderRadius: "4px",
+							}}
+						>
+							{error}
+						</div>
+					)}
+
+					<button
+						type="submit"
+						disabled={loading}
+						style={{
+							width: "100%",
+							padding: "0.75rem",
+							backgroundColor: loading ? "#ccc" : "#28a745",
+							color: "white",
+							border: "none",
+							borderRadius: "4px",
+							fontSize: "1rem",
+							cursor: loading ? "not-allowed" : "pointer",
+						}}
+					>
+						{loading ? "Saving..." : "Save My Entry"}
+					</button>
+				</form>
+			</div>
+		);
+	}
+
+	if (step === "saved") {
+		return (
+			<div
+				style={{
+					padding: "2rem",
+					maxWidth: "400px",
+					margin: "0 auto",
+					textAlign: "center",
+					fontFamily: "Arial, sans-serif",
+				}}
+			>
+				<div
+					style={{
+						fontSize: "3rem",
+						marginBottom: "1rem",
+					}}
+				>
+					✅
+				</div>
+				<h2 style={{ color: "#28a745", marginBottom: "1rem" }}>Entry Saved!</h2>
+				<p
+					style={{
+						color: "#666",
+						marginBottom: "2rem",
+						lineHeight: "1.5",
+					}}
+				></p>
+				<button
+					onClick={handleReset}
+					style={{
+						padding: "0.75rem 2rem",
+						backgroundColor: "#007bff",
+						color: "white",
+						border: "none",
+						borderRadius: "4px",
+						fontSize: "1rem",
+						cursor: "pointer",
+					}}
+				>
+					Write Another Entry
+				</button>
+			</div>
+		);
+	}
+
+	return null;
 }
