@@ -305,3 +305,274 @@ const result3 = analyzeEntry({
 });
 // Returns appropriate mixed sentiment with work topic and father relation
 ```
+
+### User Action Tracking System
+
+**Purpose**: Track user interactions (clicks, page views, form submissions, errors) for analytics and debugging.
+
+#### Model: TrackingEvent
+
+**Location**: `backend/src/models/TrackingEvent.js`
+
+**Schema Structure**:
+```javascript
+const trackingEventSchema = new mongoose.Schema({
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: false, // Optional for non-logged-in users
+  },
+  type: {
+    type: String,
+    required: true,
+    enum: ["PAGE_VIEW", "CLICK", "FORM_SUBMIT", "API_ERROR", "NAVIGATION", "SEARCH"],
+  },
+  timestamp: {
+    type: Date,
+    default: Date.now,
+  },
+  meta: {
+    type: mongoose.Schema.Types.Mixed,
+    required: false, // Free-form extra data
+  },
+}, { timestamps: true });
+```
+
+**Fields**:
+- `userId`: ObjectId (optional, for logged-in users)
+- `type`: Event type (required, enum validation)
+- `timestamp`: Event timestamp (auto-generated)
+- `meta`: Free-form object for additional data
+
+#### Routes: Events API
+
+**Location**: `backend/src/routes/events.js`
+
+**Base Path**: `/events` (mounted in `backend/server.js:25`)
+
+##### POST /events
+**Purpose**: Create a new tracking event
+
+**Request Body**:
+```json
+{
+  "userId": "ObjectId",           // Optional
+  "type": "PAGE_VIEW",           // Required
+  "meta": {                      // Optional
+    "page": "/diary",
+    "referrer": "/login",
+    "userAgent": "Mozilla/5.0..."
+  }
+}
+```
+
+**Response** (201 Created):
+```json
+{
+  "ok": true,
+  "event": {
+    "_id": "ObjectId",
+    "userId": "ObjectId",
+    "type": "PAGE_VIEW",
+    "timestamp": "2024-01-15T10:30:00.000Z",
+    "meta": { "page": "/diary" },
+    "createdAt": "2024-01-15T10:30:00.000Z",
+    "updatedAt": "2024-01-15T10:30:00.000Z",
+    "__v": 0
+  }
+}
+```
+
+**Implementation**: `backend/src/routes/events.js:5-22`
+- Validates `type` field (required)
+- Handles optional `userId` and `meta`
+- Returns 400 for missing type
+- Returns 500 for server errors
+
+##### GET /events/:userId
+**Purpose**: Retrieve all events for a specific user
+
+**URL Parameters**:
+- `userId`: ObjectId of the user
+
+**Response**: Array of events sorted by newest first
+```json
+[
+  {
+    "_id": "ObjectId",
+    "userId": "ObjectId",
+    "type": "PAGE_VIEW",
+    "timestamp": "2024-01-15T10:30:00.000Z",
+    "meta": { "page": "/diary" },
+    "createdAt": "2024-01-15T10:30:00.000Z",
+    "updatedAt": "2024-01-15T10:30:00.000Z",
+    "__v": 0
+  }
+]
+```
+
+**Implementation**: `backend/src/routes/events.js:24-34`
+- Queries events by userId
+- Sorts by `createdAt: -1` (newest first)
+- Returns empty array if no events found
+
+#### Event Types
+
+The system supports these event types:
+
+1. **PAGE_VIEW**: User visits a page
+   ```json
+   {
+     "type": "PAGE_VIEW",
+     "meta": {
+       "page": "/diary",
+       "referrer": "/login",
+       "loadTime": 1200
+     }
+   }
+   ```
+
+2. **CLICK**: User clicks an element
+   ```json
+   {
+     "type": "CLICK",
+     "meta": {
+       "elementId": "save-button",
+       "page": "/diary",
+       "coordinates": { "x": 150, "y": 300 }
+     }
+   }
+   ```
+
+3. **FORM_SUBMIT**: User submits a form
+   ```json
+   {
+     "type": "FORM_SUBMIT",
+     "meta": {
+       "form": "diary-entry",
+       "duration": 45000,
+       "fields": ["prompt", "answers"]
+     }
+   }
+   ```
+
+4. **API_ERROR**: API call fails
+   ```json
+   {
+     "type": "API_ERROR",
+     "meta": {
+       "endpoint": "/entries/save",
+       "error": "Validation failed",
+       "statusCode": 400
+     }
+   }
+   ```
+
+5. **NAVIGATION**: User navigates
+   ```json
+   {
+     "type": "NAVIGATION",
+     "meta": {
+       "from": "/login",
+       "to": "/diary",
+       "method": "click"
+     }
+   }
+   ```
+
+6. **SEARCH**: User performs search
+   ```json
+   {
+     "type": "SEARCH",
+     "meta": {
+       "query": "diary entries",
+       "results": 5,
+       "page": "/search"
+     }
+   }
+   ```
+
+#### Integration Examples
+
+**Frontend Tracking**:
+```javascript
+// Track page view
+fetch('/events', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    type: 'PAGE_VIEW',
+    meta: { page: window.location.pathname }
+  })
+});
+
+// Track button click with user
+fetch('/events', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    userId: currentUser.id,
+    type: 'CLICK',
+    meta: { elementId: 'save-button', page: '/diary' }
+  })
+});
+```
+
+**Error Tracking**:
+```javascript
+// In API routes
+try {
+  // API logic
+} catch (error) {
+  // Track error
+  await fetch('/events', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      type: 'API_ERROR',
+      meta: {
+        endpoint: req.path,
+        error: error.message,
+        statusCode: 500
+      }
+    })
+  });
+  
+  res.status(500).json({ error: 'Server error' });
+}
+```
+
+#### Testing Guide
+
+**Postman Setup**:
+1. **POST /events**:
+   - URL: `POST http://localhost:3000/events`
+   - Headers: `Content-Type: application/json`
+   - Body: Any valid event JSON
+
+2. **GET /events/:userId**:
+   - URL: `GET http://localhost:3000/events/507f1f77bcf86cd799439011`
+   - No body needed
+
+**MongoDB Verification**:
+- Open mongo-express: `http://localhost:8081`
+- Select your database
+- Look for `trackingevents` collection
+- Verify document structure and timestamps
+
+#### Technical Details
+
+- **Database Collection**: `trackingevents`
+- **Indexing**: Consider adding indexes for userId, type, timestamp for performance
+- **Cleanup**: No automatic cleanup - events persist indefinitely
+- **Privacy**: userId optional allows tracking anonymous users
+- **Scalability**: Free-form meta field allows flexible event data
+- **Timestamps**: Both automatic (createdAt/updatedAt) and custom timestamp field
+
+#### Development Notes
+
+- Follows existing code patterns (ES modules, async/await, consistent error handling)
+- Uses same validation approach as other routes
+- Integrates seamlessly with existing MongoDB setup
+- No external dependencies required
+- Docker-ready with existing environment setup
