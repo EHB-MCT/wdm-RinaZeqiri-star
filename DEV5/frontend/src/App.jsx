@@ -9,7 +9,6 @@ export default function App() {
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState(null);
 
-	// ✅ gebruik een “fake” maar geldige ObjectId (24 hex) zodat backend niet crasht
 	const DEV_USER_ID = "65a1b2c3d4e5f67890123456";
 
 	async function handleBirthdaySubmit(e) {
@@ -20,7 +19,6 @@ export default function App() {
 		setError(null);
 
 		try {
-			// events: ok
 			await sendEvent({
 				userId: DEV_USER_ID,
 				type: "FORM_SUBMIT",
@@ -90,7 +88,7 @@ export default function App() {
 	if (step === "birthday") {
 		return (
 			<div style={{ padding: "2rem", maxWidth: "400px", margin: "0 auto", fontFamily: "Arial, sans-serif" }}>
-				<h1 style={{ textAlign: "center", marginBottom: "2rem", color: "#333" }}>Astro Diary</h1>
+				<h1 style={{ textAlign: "center", marginBottom: "2rem", color: "#ffc7c7ff" }}>Astro Diary</h1>
 
 				<form onSubmit={handleBirthdaySubmit}>
 					<div style={{ marginBottom: "1rem" }}>

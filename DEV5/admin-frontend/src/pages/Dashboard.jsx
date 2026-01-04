@@ -80,7 +80,7 @@ export default function Dashboard() {
 			{/* Filters */}
 			<div
 				style={{
-					backgroundColor: "#f5f5f5",
+					backgroundColor: "#c26dbf",
 					padding: "20px",
 					borderRadius: "8px",
 					marginBottom: "20px",
@@ -132,7 +132,7 @@ export default function Dashboard() {
 					>
 						<div
 							style={{
-								backgroundColor: "#e3f2fd",
+								backgroundColor: "#77bceeff",
 								padding: "15px",
 								borderRadius: "8px",
 								border: "1px solid #90caf9",
@@ -144,10 +144,10 @@ export default function Dashboard() {
 
 						<div
 							style={{
-								backgroundColor: "#f3e5f5",
+								backgroundColor: "#a74db7ff",
 								padding: "15px",
 								borderRadius: "8px",
-								border: "1px solid #ce93d8",
+								border: "1px solid #000000ff",
 							}}
 						>
 							<h4 style={{ margin: "0 0 10px 0", color: "#7b1fa2" }}>Events by Type</h4>
@@ -163,7 +163,7 @@ export default function Dashboard() {
 
 						<div
 							style={{
-								backgroundColor: "#e8f5e8",
+								backgroundColor: "#87e187ff",
 								padding: "15px",
 								borderRadius: "8px",
 								border: "1px solid #a5d6a7",
@@ -182,7 +182,7 @@ export default function Dashboard() {
 
 						<div
 							style={{
-								backgroundColor: "#fff3e0",
+								backgroundColor: "#f3d098ff",
 								padding: "15px",
 								borderRadius: "8px",
 								border: "1px solid #ffcc80",
