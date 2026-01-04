@@ -1,12 +1,15 @@
 # Astro Diary - DEV5 Project
+
 Application web pour suivi de journal personnel avec analyse de sentiments, suivi des événements utilisateur et tableau de bord d'administration.
 
 ## Prerequisites
+
 - Docker
 - Docker Compose
 - Node.js (optionnel, pour développement local sans Docker)
 
 ## Step-by-Step Setup Guide
+
 1. Clone the repository:
 
 ```bash
@@ -19,13 +22,20 @@ git clone https://github.com/EHB-MCT/wdm-RinaZeqiri-star.git
 cp DEV5/backend/.env.template DEV5/backend/.env
 ```
 
-3. Start all services:
+3. Go to file project:
+
+```bash
+cd .\DEV5\
+```
+
+4. Start all services:
 
 ```bash
 docker compose up --build
 ```
 
 ## Access URLs
+
 - User Frontend: http://localhost:5173/
 - Admin Frontend: http://localhost:5174/
 - Backend API: http://localhost:3000/
@@ -34,6 +44,7 @@ docker compose up --build
 ## Testing Flow
 
 ### User Flow
+
 1. Open user frontend at http://localhost:5173/
 2. Enter birthday in the form
 3. Receive zodiac sign and personalized diary prompt questions
@@ -43,6 +54,7 @@ docker compose up --build
 7. View saved entries in the diary
 
 ### Admin Flow
+
 1. Open admin frontend at http://localhost:5174/
 2. View platform statistics (users count, entries count, events count)
 3. Browse and filter users list
@@ -60,6 +72,7 @@ docker compose up --build
    - Pagination and limits
 
 ## File Structure Overview
+
 ```
 wdm-RinaZeqiri-star/
 ├── DEV5/
@@ -103,11 +116,13 @@ wdm-RinaZeqiri-star/
 ```
 
 ## Stopping
+
 ```bash
 docker compose down
 ```
 
 ## Optional: Reset database completely:
+
 ```bash
 docker compose down -v
 ```
@@ -115,9 +130,11 @@ docker compose down -v
 ## API Endpoints
 
 ### Health Check
+
 - `GET /health` - Service health status
 
 ### Entries
+
 - `POST /entries/prompt` - Generate diary prompt based on birthday
   - Body: `{ birthday }`
 - `POST /entries/save` - Save diary entry with analysis
@@ -125,10 +142,12 @@ docker compose down -v
 - `GET /entries/:userId` - List all entries for a specific user
 
 ### Events
+
 - `POST /events` - Track user events
   - Body: `{ userId, type, meta }`
 
 ### Admin
+
 - `GET /admin/users` - Get all users list
 - `GET /admin/stats` - Get platform statistics
 - `GET /admin/events` - Get filtered events
@@ -137,12 +156,14 @@ docker compose down -v
   - Query: `userId, from, to, limit, sentiment, emotion, topic`
 
 ## Environment Variables
+
 - **PORT**: Backend server port (default: 3000)
 - **MONGO_URI**: MongoDB connection string
   - With Docker Compose: `mongodb://mongo:27017/astro-diary`
   - Local development: `mongodb://localhost:27017/astro-diary`
 
 ## Sources and References
+
 - Docker Compose environment files: https://docs.docker.com/compose/environment-variables/
 
 - Mongo Express image: https://hub.docker.com/_/mongo-express
@@ -151,10 +172,11 @@ docker compose down -v
 
 - Mongoose ODM: https://mongoosejs.com/
 
-- gebruikt om mongo-express toeveogen: 
-https://github.com/mongo-express/mongo-express-docker/blob/master/README.md
+- gebruikt om mongo-express toeveogen:
+  https://github.com/mongo-express/mongo-express-docker/blob/master/README.md
 
 - gebruikt voor wat zijn lexiconen: https://www.medallia.com/platform/text-analytics/?utm_campaign=monkeylearnmigration/
 
 ## AI Assistance
+
 AI assistance used (OpenCode)
