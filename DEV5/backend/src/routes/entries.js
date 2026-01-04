@@ -1,6 +1,7 @@
 import express from "express";
 import { getZodiac } from "../utils/zodiac.js";
 import DiaryEntry from "../models/DiaryEntry.js";
+import { analyzeEntry } from "../utils/analyzeEntry.js";
 
 const router = express.Router();
 
@@ -28,12 +29,15 @@ router.post("/save", async (req, res) => {
 			return res.status(400).json({ error: "Missing fields" });
 		}
 
+		const analysis = analyzeEntry(answers);
+
 		const entry = new DiaryEntry({
 			userId,
 			date,
 			zodiacSign,
 			promptText,
 			answers,
+			analysis,
 		});
 
 		const savedEntry = await entry.save();
